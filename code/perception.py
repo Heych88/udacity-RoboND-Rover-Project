@@ -79,6 +79,7 @@ def perspect_transform(img, src, dst):
     
     return warped
 
+sample_lost = 0
 
 # Apply the above functions in succession and update the Rover state accordingly
 def perception_step(Rover):
@@ -87,7 +88,7 @@ def perception_step(Rover):
     # NOTE: camera image is coming to you in Rover.img
     img = Rover.img 
     # 1) Define source and destination points for perspective transform
-    dst_size = 12
+    dst_size = 8
     bottom_offset = 1
     height, width = np.shape(img)[:2]
     
@@ -99,18 +100,20 @@ def perception_step(Rover):
                       ])     
     # 2) Apply perspective transform
     hsv_img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-    warped = perspect_transform(hsv_img, source, destination)
+    path_threshed = color_thresh(hsv_img, rgb_thresh=(3, 5, 140))
+    sample_threshed = color_thresh(hsv_img, rgb_thresh=(3, 120, 120))
+
+    path_threshed = perspect_transform(path_threshed, source, destination)
     # 3) Apply color threshold to identify navigable terrain/obstacles/rock samples
-    path_threshed = color_thresh(warped, rgb_thresh=(5, 5, 150))
-    rock_threshed = color_thresh(warped, rgb_thresh=(5, 120, 150))
+    sample_threshed = perspect_transform(sample_threshed, source, destination)
 
     # 4) Update Rover.vision_image (this will be displayed on left side of screen)
     Rover.vision_image[:,:,0] = (1 - path_threshed) * 255
-    Rover.vision_image[:,:,1] = rock_threshed * 255
+    Rover.vision_image[:,:,1] = sample_threshed * 255
     Rover.vision_image[:,:,2] = path_threshed * 255
 
     # 5) Convert map image pixel values to rover-centric coords
-    xpix_rock, ypix_rock = rover_coords(rock_threshed)
+    xpix_sample, ypix_sample = rover_coords(sample_threshed)
     xpix_path, ypix_path = rover_coords(path_threshed)
     xpix_obs, ypix_obs = rover_coords(np.invert(path_threshed))
 
@@ -119,7 +122,7 @@ def perception_step(Rover):
     x_world_obs, y_world_obs = pix_to_world(xpix_obs, ypix_obs, Rover.pos[0],
                                             Rover.pos[1], Rover.yaw,
                                             Rover.worldmap.shape[0], scale)
-    x_world_rock, y_world_rock = pix_to_world(xpix_rock, ypix_rock, Rover.pos[0],
+    x_world_rock, y_world_rock = pix_to_world(xpix_sample, ypix_sample, Rover.pos[0],
                                               Rover.pos[1], Rover.yaw,
                                               Rover.worldmap.shape[0], scale)
     x_world_path, y_world_path = pix_to_world(xpix_path, ypix_path, Rover.pos[0],
@@ -138,10 +141,23 @@ def perception_step(Rover):
     # Update Rover pixel distances and angles
         # Rover.nav_dists = rover_centric_pixel_distances
         # Rover.nav_angles = rover_centric_angles
-    if rock_threshed.any():
-        # A rock has been detected so calculate direction to the rock
-        Rover.nav_dists, Rover.nav_angles = to_polar_coords(xpix_rock, ypix_rock)
-    else :
-        Rover.nav_dists, Rover.nav_angles = to_polar_coords(xpix_path, ypix_path)
+    Rover.nav_dists, Rover.nav_angles = to_polar_coords(xpix_path, ypix_path)
 
+    global sample_lost
+    LOST_MAX = 10
+    sample_size = 10
+
+    if sample_threshed.any(): #len(np.nonzero(sample_threshed)[0])
+        # A rock has been detected so calculate direction to the rock
+        Rover.sample_dists, Rover.sample_angles = to_polar_coords(xpix_sample, ypix_sample)
+        Rover.sample_detected = True
+        sample_lost = 0
+    elif sample_lost >= LOST_MAX:
+        Rover.sample_dists = 0
+        Rover.sample_angles = 0
+        Rover.sample_detected = False
+    elif Rover.sample_detected == True:
+        sample_lost += 1
+    else:
+        Rover.sample_detected = False
     return Rover
