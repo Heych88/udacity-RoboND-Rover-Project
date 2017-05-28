@@ -88,7 +88,7 @@ def perception_step(Rover):
     img = Rover.img 
     # 1) Define source and destination points for perspective transform
     dst_size = 12
-    bottom_offset = 6
+    bottom_offset = 1
     height, width = np.shape(img)[:2]
     
     source = np.float32([[14, 140], [301 ,140],[200, 96], [118, 96]])
