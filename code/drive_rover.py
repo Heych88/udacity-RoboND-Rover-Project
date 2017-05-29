@@ -55,6 +55,7 @@ class RoverState():
         self.mode = 'forward' # Current mode (can be forward or stop)
         self.throttle_set = 0.2 # Throttle setting when accelerating
         self.brake_set = 10 # Brake setting when braking
+        self.mim_wall_distance = 100
         # The stop_forward and go_forward fields below represent total count
         # of navigable terrain pixels.  This is a very crude form of knowing
         # when you can keep going and when you should stop.  Feel free to
@@ -79,6 +80,18 @@ class RoverState():
         self.near_sample = 0 # Will be set to telemetry value data["near_sample"]
         self.picking_up = 0 # Will be set to telemetry value data["picking_up"]
         self.send_pickup = False # Set to True to trigger rock pickup
+        # path planning
+        self.width = 320
+        self.height = 160
+        self.dst_size = 10
+        self.bottom_offset = 0
+        self.grid = 0
+        self.source = np.float32([[14, 140], [301 ,140],[200, 96], [118, 96]])
+        self.destination = np.float32([[self.width/2 - self.dst_size, self.height - self.bottom_offset],
+                          [self.width/2 + self.dst_size, self.height - self.bottom_offset],
+                          [self.width/2 + self.dst_size, self.height - 2*self.dst_size - self.bottom_offset],
+                          [self.width/2 - self.dst_size, self.height - 2*self.dst_size - self.bottom_offset],
+                          ])
 # Initialize our rover 
 Rover = RoverState()
 
