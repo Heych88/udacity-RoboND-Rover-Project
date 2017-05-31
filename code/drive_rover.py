@@ -86,9 +86,9 @@ class RoverState():
         # path planning
         self.width = 320
         self.height = 160
-        self.dst_size = 10
+        self.dst_size = 12
         self.bottom_offset = 0
-        self.scale = 2 * self.dst_size + 2
+        self.scale = 2 * self.dst_size
         self.source = np.float32([[14, 140], [301 ,140],[200, 96], [118, 96]])
         self.destination = np.float32([[self.width/2 - self.dst_size, self.height - self.bottom_offset],
                           [self.width/2 + self.dst_size, self.height - self.bottom_offset],
@@ -97,6 +97,7 @@ class RoverState():
                           ])
         self.skip_next = False
         self.PID = controller.PID(2, 0.005, 0.5)
+        self.turn_dir = 'none'
 # Initialize our rover 
 Rover = RoverState()
 

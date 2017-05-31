@@ -12,6 +12,7 @@ def forward(Rover, speed, steer):
         Rover.steer = np.clip(steer, -15, 15)
     else:
         Rover.mode ='turn_around'
+        Rover.PID.clear_PID()
 
 def backward(Rover):
     if not (Rover.pitch < Rover.pitch_cutoff or Rover.pitch > 360 - Rover.pitch_cutoff):
@@ -20,14 +21,17 @@ def backward(Rover):
         Rover.brake = 0
         # Set steering to average angle clipped to the range +/- 15
         Rover.steer = 0
+        Rover.PID.clear_PID()
     else:
         Rover.mode ='turn_around'
+        Rover.PID.clear_PID()
 
 def stop(Rover):
     # If we're in stop mode but still moving keep braking
     Rover.throttle = 0
     Rover.brake = Rover.brake_set
     Rover.steer = 0
+    Rover.PID.clear_PID()
 
     if Rover.vel == 0:
         if Rover.sample_angles is not None:
@@ -55,6 +59,7 @@ def brake(Rover, brake_force, steer):
 def turn_around(Rover):
     Rover.throttle = 0
     Rover.brake = Rover.brake_set
+    Rover.PID.clear_PID()
 
     if Rover.can_go_forward:
         Rover.mode = 'forward'

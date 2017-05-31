@@ -160,7 +160,7 @@ def perception_step(Rover):
             #x_world_obs, y_world_obs = pix_to_world(xpix_obs, ypix_obs, Rover.pos[0],
             #                                        Rover.pos[1], Rover.yaw,
             #                                        Rover.worldmap.shape[0], Rover.scale)
-            x_world_rock, y_world_rock = pix_to_world(xpix_sample, ypix_sample, Rover.pos[0],
+            x_world_sample, y_world_sample = pix_to_world(xpix_sample, ypix_sample, Rover.pos[0],
                                                       Rover.pos[1], Rover.yaw,
                                                       Rover.worldmap.shape[0], Rover.scale)
             x_world_path, y_world_path = pix_to_world(xpix_path, ypix_path, Rover.pos[0],
@@ -172,7 +172,7 @@ def perception_step(Rover):
                 #          Rover.worldmap[rock_y_world, rock_x_world, 1] += 1
                 #          Rover.worldmap[navigable_y_world, navigable_x_world, 2] += 1
             #Rover.worldmap[y_world_obs, x_world_obs, 0] += 1
-            Rover.worldmap[y_world_rock, x_world_rock, 1] += 1
+            Rover.worldmap[y_world_sample, x_world_sample, 1] += 1
             Rover.worldmap[y_world_path, x_world_path, 2] += 1
 
             # 8) Convert rover-centric pixel positions to polar coordinates
@@ -197,6 +197,7 @@ def perception_step(Rover):
                 Rover.sample_detected = True
                 sample_lost = 0
                 Rover.mode = 'sample'
+                Rover.turn_dir = 'none'
             elif sample_lost >= LOST_MAX:
                 Rover.sample_detected = False
             elif Rover.sample_detected == True:
@@ -204,9 +205,9 @@ def perception_step(Rover):
             else:
                 Rover.sample_detected = False
                 Rover.mode = 'forward'
-        elif Rover.vel == 0 and Rover.pitch < 10 * Rover.pitch_cutoff or Rover.pitch > 360 - Rover.pitch_cutoff * 10:
-            # has the rover driven up the wall
-            Rover.mode = 'backward'
+    #elif Rover.vel == 0 and Rover.pitch < 10 * Rover.pitch_cutoff or Rover.pitch > 360 - Rover.pitch_cutoff * 10:
+    #    # has the rover driven up the wall
+    #    #Rover.mode = 'backward'
     else:
         Rover.skip_next = True
     return Rover
