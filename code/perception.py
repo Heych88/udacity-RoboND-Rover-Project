@@ -168,10 +168,13 @@ def perception_step(Rover):
                 # Rover.nav_angles = rover_centric_angles
             Rover.nav_dists, Rover.nav_angles = to_polar_coords(xpix_path, ypix_path)
 
-            nav_mean_angle = np.mean(Rover.nav_angles * 180 / np.pi)
-            Rover.can_go_forward = nav_mean_angle > -1 * Rover.angle_forward and \
-                                   nav_mean_angle < Rover.angle_forward and \
-                                   np.mean(Rover.nav_dists) > Rover.mim_wall_distance
+            try:
+                nav_mean_angle = np.mean(Rover.nav_angles * 180 / np.pi)
+                Rover.can_go_forward = nav_mean_angle > -1 * Rover.angle_forward and \
+                                       nav_mean_angle < Rover.angle_forward and \
+                                       np.mean(Rover.nav_dists) > Rover.mim_wall_distance
+            except:
+                Rover.can_go_forward = False
 
             if Rover.can_go_forward == False:
                 Rover.mode = 'turn_around'
@@ -200,4 +203,7 @@ def perception_step(Rover):
             else:
                 Rover.sample_detected = False
                 Rover.mode = 'forward'"""
+        elif Rover.vel ==0 and Rover.pitch < 10 * Rover.pitch_cutoff or Rover.pitch > 360 - Rover.pitch_cutoff * 10:
+            # has the rover driven up the wall
+            Rover.mode = 'backward'
     return Rover

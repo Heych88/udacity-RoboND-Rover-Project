@@ -13,6 +13,15 @@ def forward(Rover, speed, steer):
     else:
         Rover.mode ='turn_around'
 
+def backward(Rover):
+    if not (Rover.pitch < Rover.pitch_cutoff or Rover.pitch > 360 - Rover.pitch_cutoff):
+        Rover.throttle = -0.2
+        Rover.brake = 0
+        # Set steering to average angle clipped to the range +/- 15
+        Rover.steer = 0
+    else:
+        Rover.mode ='turn_around'
+
 def stop(Rover):
     # If we're in stop mode but still moving keep braking
     Rover.throttle = 0
@@ -22,8 +31,10 @@ def stop(Rover):
     if Rover.vel == 0:
         if Rover.sample_angles is not None:
             Rover.mode = 'sample'
-        else:
+        elif Rover.can_go_forward:
             Rover.mode = 'forward'
+        else:
+            Rover.mode = 'turn_around'
 
 def brake(Rover, brake_force, steer):
     vel_gain = 100
@@ -106,11 +117,12 @@ def decision_step(Rover):
     # improve on this decision tree to do a good job of navigating autonomously!
     if Rover.picking_up == 0 and Rover.send_pickup is False:
         print(Rover.mode)
-        if Rover.mode == 'turn_around':
-            turn_around(Rover)
-        elif Rover.mode == 'forward':
-            forward(Rover, 0.2, 0)
-
+        #if Rover.mode == 'turn_around':
+        #    turn_around(Rover)
+        #elif Rover.mode == 'forward':
+        #    forward(Rover, 0.2, 0)
+        #if Rover.mode == 'backward':
+        #    backward(Rover)
         """if Rover.mode == 'sample':
             if Rover.sample_detected == True:
                 steer = np.mean(Rover.sample_angles * 180 / np.pi)
