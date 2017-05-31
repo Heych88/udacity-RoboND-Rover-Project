@@ -112,7 +112,8 @@ def perception_step(Rover):
     # Perform perception steps to update Rover()
     # TODO: 
     # NOTE: camera image is coming to you in Rover.img
-    if Rover.picking_up == 0 and Rover.send_pickup is False:
+    if Rover.picking_up == 0 and Rover.send_pickup is False and Rover.skip_next:
+        Rover.skip_next = False
         if Rover.pitch < Rover.pitch_cutoff or Rover.pitch > 360 - Rover.pitch_cutoff:
             img = Rover.img
             # 1) Define source and destination points for perspective transform
@@ -206,4 +207,6 @@ def perception_step(Rover):
         elif Rover.vel == 0 and Rover.pitch < 10 * Rover.pitch_cutoff or Rover.pitch > 360 - Rover.pitch_cutoff * 10:
             # has the rover driven up the wall
             Rover.mode = 'backward'
+    else:
+        Rover.skip_next = True
     return Rover
