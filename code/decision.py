@@ -37,7 +37,6 @@ def forward(Rover, speed, steer):
     Rover.steer = np.clip(steer, -15, 15)
 
 def stop(Rover):
-    Rover.mode = 'stop'
     # If we're in stop mode but still moving keep braking
     Rover.throttle = 0
     Rover.brake = Rover.brake_set
@@ -50,7 +49,6 @@ def stop(Rover):
             Rover.mode = 'forward'
 
 def brake(Rover, brake_force, steer):
-    #Rover.mode = 'brake'
     vel_gain = 100
     # determine the brake force needed to stop in the distance
     # force = velocity(m/s) / distance(pixel)
@@ -68,7 +66,6 @@ def brake(Rover, brake_force, steer):
 def turn_around(Rover):
     Rover.throttle = 0
     Rover.brake = Rover.brake_set
-    Rover.mode = 'turn_around'
 
     if len(Rover.nav_angles) < Rover.go_forward:
 
@@ -85,7 +82,6 @@ def turn_around(Rover):
 
 def sample_collect(Rover, steer):
     distance = np.mean(Rover.sample_dists)
-    Rover.mode = 'sample'
     if Rover.near_sample > 0:
         if Rover.vel > 0.2:
             brake(Rover, 1, steer)
@@ -109,7 +105,7 @@ def sample_collect(Rover, steer):
 def move_forward(Rover, steer):
     # If mode is forward, navigable terrain looks good
     # and velocity is below max, then throttle
-    Rover.mode = 'forward'
+    #Rover.mode = 'forward'
     if Rover.vel < Rover.max_vel:
         # Set throttle value to throttle setting
         Rover.throttle = Rover.throttle_set
@@ -127,7 +123,7 @@ def decision_step(Rover):
     # improve on this decision tree to do a good job of navigating autonomously!
     if Rover.picking_up == 0 and Rover.send_pickup is False:
         print(Rover.mode)
-        if Rover.mode == 'sample':
+        """if Rover.mode == 'sample':
             if Rover.sample_detected == True:
                 steer = np.mean(Rover.sample_angles * 180 / np.pi)
                 sample_collect(Rover, steer)
@@ -154,7 +150,7 @@ def decision_step(Rover):
                     turn_around(Rover)
         else:
             Rover.mode = 'turn_around'
-            turn_around(Rover)
+            turn_around(Rover)"""
 
     """
     if Rover.nav_angles is not None:

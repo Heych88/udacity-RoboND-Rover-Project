@@ -83,9 +83,9 @@ class RoverState():
         # path planning
         self.width = 320
         self.height = 160
-        self.dst_size = 10
+        self.dst_size = 8
         self.bottom_offset = 0
-        self.grid = 0
+        self.scale = 2 * self.dst_size
         self.source = np.float32([[14, 140], [301 ,140],[200, 96], [118, 96]])
         self.destination = np.float32([[self.width/2 - self.dst_size, self.height - self.bottom_offset],
                           [self.width/2 + self.dst_size, self.height - self.bottom_offset],
