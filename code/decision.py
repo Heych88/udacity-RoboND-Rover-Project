@@ -4,7 +4,7 @@ def forward(Rover, speed, steer):
     if Rover.can_go_forward:
         if Rover.vel < Rover.max_vel:
             # Set throttle value to throttle setting
-            Rover.throttle = speed
+            Rover.throttle = Rover.PID.update(speed)
         else:  # Else coast
             Rover.throttle = 0
         Rover.brake = 0
@@ -15,7 +15,8 @@ def forward(Rover, speed, steer):
 
 def backward(Rover):
     if not (Rover.pitch < Rover.pitch_cutoff or Rover.pitch > 360 - Rover.pitch_cutoff):
-        Rover.throttle = -0.2
+        Rover.PID.set_desired(-1 * Rover.throttle_set)
+        Rover.throttle = Rover.PID.update(Rover.vel)
         Rover.brake = 0
         # Set steering to average angle clipped to the range +/- 15
         Rover.steer = 0
@@ -91,8 +92,8 @@ def sample_collect(Rover, steer):
         """if len(Rover.sample_angles) >= Rover.sample_stop_forward:
             # If mode is forward, navigable terrain looks good
             # and velocity is below max, then throttle"""
-        Rover.throttle = Rover.throttle_set
-        forward(Rover, Rover.throttle, steer)
+        Rover.PID.set_desired(Rover.throttle_set)
+        forward(Rover, Rover.vel, steer)
         #else:
         #    Rover.mode = 'turn_around'
     else:
@@ -104,19 +105,19 @@ def decision_step(Rover):
     # Implement conditionals to decide what to do given perception data
     # Here you're all set up with some basic functionality but you'll need to
     # improve on this decision tree to do a good job of navigating autonomously!
-    if Rover.picking_up == 0 and Rover.send_pickup is False:
-        print(Rover.mode)
-        Rover.throttle = 0
-        Rover.brake = 0
-        if Rover.mode == 'sample' or Rover.vision_image[:, :, 1].any():
+    if Rover.picking_up == 0 and Rover.send_pickup is False and Rover.skip_next:
+        #print(Rover.mode)
+        if Rover.mode == 'sample':
+            Rover.mode = 'forward'
+        if False: #Rover.mode == 'sample' or Rover.vision_image[:, :, 1].any():
             Rover.mode = 'sample'
             if Rover.sample_detected:
                 steer = np.mean(Rover.sample_angles * 180 / np.pi)
                 sample_collect(Rover, steer)
             else:
                 Rover.mode = 'turn_around'
-        elif Rover.mode == 'stop':
-            stop(Rover)
+        #elif Rover.mode == 'stop':
+        #    stop(Rover)
         elif Rover.mode == 'turn_around':
             turn_around(Rover)
         elif Rover.mode == 'forward' and Rover.can_go_forward:
@@ -124,7 +125,8 @@ def decision_step(Rover):
             # TODO Mapping algorithm
             if len(Rover.nav_angles) >= Rover.stop_forward:
                 steer = np.mean(Rover.nav_angles * 180 / np.pi)
-                forward(Rover, Rover.throttle_set, steer)
+                Rover.PID.set_desired(Rover.throttle_set)
+                forward(Rover, Rover.vel, steer)
             else:
                 Rover.mode = 'turn_around'
                 turn_around(Rover)

@@ -21,6 +21,7 @@ import time
 from perception import perception_step
 from decision import decision_step
 from supporting_functions import update_rover, create_output_images
+import contoller as controller
 # Initialize socketio server and Flask application 
 # (learn more at: https://python-socketio.readthedocs.io/en/latest/)
 sio = socketio.Server()
@@ -53,7 +54,7 @@ class RoverState():
         self.nav_dists = None # Distances of navigable terrain pixels
         self.ground_truth = ground_truth_3d # Ground truth worldmap
         self.mode = 'forward' # Current mode (can be forward or stop)
-        self.throttle_set = 0.15 # Throttle setting when accelerating
+        self.throttle_set = 1.25 # Throttle setting when accelerating
         self.brake_set = 0.5 # Brake setting when braking
         # The stop_forward and go_forward fields below represent total count
         # of navigable terrain pixels.  This is a very crude form of knowing
@@ -64,7 +65,7 @@ class RoverState():
         self.can_go_forward = True
         self.mim_wall_distance = 40
         self.pitch_cutoff = 2.5
-        self.max_vel = 2 # Maximum velocity (meters/second)
+        self.max_vel = 5 # Maximum velocity (meters/second)
         # Image output from perception step
         # Update this image to display your intermediate analysis steps
         # on screen in autonomous mode
@@ -94,6 +95,8 @@ class RoverState():
                           [self.width/2 + self.dst_size, self.height - 2*self.dst_size - self.bottom_offset],
                           [self.width/2 - self.dst_size, self.height - 2*self.dst_size - self.bottom_offset],
                           ])
+        self.skip_next = False
+        self.PID = controller.PID(2, 0.005, 0.5)
 # Initialize our rover 
 Rover = RoverState()
 
