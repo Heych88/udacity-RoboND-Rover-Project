@@ -26,5 +26,4 @@ class PID:
         self.old_error = measurement
 
         go = self.Kp * self.error + self.Ki * self.integral + self.Kp * delta_error
-        print(measurement, "   ", go)
         return go
