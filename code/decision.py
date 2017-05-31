@@ -125,7 +125,10 @@ def decision_step(Rover):
         if Rover.mode == 'sample' or Rover.vision_image[:, :, 1].any():
             Rover.mode = 'sample'
             if Rover.sample_detected:
-                steer = np.mean(Rover.sample_angles * 180 / np.pi)
+                if len(Rover.sample_angles) > 0:
+                    steer = np.mean(Rover.sample_angles * 180 / np.pi)
+                else:
+                    steer = 0
                 sample_collect(Rover, steer)
             else:
                 Rover.mode = 'turn_around'
