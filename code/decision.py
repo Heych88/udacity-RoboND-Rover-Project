@@ -100,8 +100,12 @@ def sample_collect(Rover, steer):
             stop(Rover)
             Rover.send_pickup = True
             Rover.mode = 'turn_around'
-    elif distance < 50. and Rover.vel > 0.2:
-        brake(Rover, 0.1, steer)
+    elif distance < 40:
+        if Rover.vel > 0.2:
+            brake(Rover, 0.1, steer)
+        else:
+            Rover.PID.set_desired(0.2)
+            forward(Rover, Rover.vel, steer)
     elif Rover.sample_angles is not None:
         print("got sample data")
         """if len(Rover.sample_angles) >= Rover.sample_stop_forward:
@@ -121,15 +125,17 @@ def decision_step(Rover):
     # Here you're all set up with some basic functionality but you'll need to
     # improve on this decision tree to do a good job of navigating autonomously!
     if Rover.picking_up == 0 and Rover.send_pickup is False and Rover.skip_next:
-        print(Rover.mode)
+        #print(Rover.mode)
         if Rover.mode == 'sample' or Rover.vision_image[:, :, 1].any():
             Rover.mode = 'sample'
+            Rover.skip_next = True
             if Rover.sample_detected:
                 if len(Rover.sample_angles) > 0:
                     steer = np.mean(Rover.sample_angles * 180 / np.pi)
                 else:
                     steer = 0
-                sample_collect(Rover, steer)
+                print("steer : ", steer)
+                sample_collect(Rover, steer * 0.8)
             else:
                 Rover.mode = 'turn_around'
         #elif Rover.mode == 'stop':
