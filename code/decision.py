@@ -77,37 +77,26 @@ def turn_around(Rover):
 def sample_collect(Rover, steer):
     distance = np.mean(Rover.sample_dists)
     if Rover.near_sample > 0:
+        print("near sample")
         if Rover.vel > 0.2:
             brake(Rover, 1, steer)
         elif Rover.vel <= 0.1:
             stop(Rover)
             Rover.send_pickup = True
             Rover.mode = 'turn_around'
-    elif distance < 30. and Rover.vel > 0.2:
+    elif distance < 50. and Rover.vel > 0.2:
         brake(Rover, 0.1, steer)
     elif Rover.sample_angles is not None:
-        if len(Rover.sample_angles) >= Rover.sample_stop_forward:
+        print("got sample data")
+        """if len(Rover.sample_angles) >= Rover.sample_stop_forward:
             # If mode is forward, navigable terrain looks good
-            # and velocity is below max, then throttle
-            Rover.throttle = Rover.throttle_set
-            forward(Rover, Rover.throttle, steer)
-        else:
-            Rover.mode = 'turn_around'
+            # and velocity is below max, then throttle"""
+        Rover.throttle = Rover.throttle_set
+        forward(Rover, Rover.throttle, steer)
+        #else:
+        #    Rover.mode = 'turn_around'
     else:
         Rover.mode = 'turn_around'
-
-def move_forward(Rover, steer):
-    # If mode is forward, navigable terrain looks good
-    # and velocity is below max, then throttle
-    #Rover.mode = 'forward'
-    if Rover.vel < Rover.max_vel:
-        # Set throttle value to throttle setting
-        Rover.throttle = Rover.throttle_set
-    else:  # Else coast
-        Rover.throttle = 0
-    Rover.brake = 0
-    # Set steering to average angle clipped to the range +/- 15
-    forward(Rover, Rover.throttle, steer)
 
 # This is where you can build a decision tree for determining throttle, brake and steer 
 # commands based on the output of the perception_step() function
@@ -117,40 +106,31 @@ def decision_step(Rover):
     # improve on this decision tree to do a good job of navigating autonomously!
     if Rover.picking_up == 0 and Rover.send_pickup is False:
         print(Rover.mode)
-        #if Rover.mode == 'turn_around':
-        #    turn_around(Rover)
-        #elif Rover.mode == 'forward':
-        #    forward(Rover, 0.2, 0)
-        #if Rover.mode == 'backward':
-        #    backward(Rover)
-        """if Rover.mode == 'sample':
-            if Rover.sample_detected == True:
+        Rover.throttle = 0
+        Rover.brake = 0
+        if Rover.mode == 'sample' or Rover.vision_image[:, :, 1].any():
+            Rover.mode = 'sample'
+            if Rover.sample_detected:
                 steer = np.mean(Rover.sample_angles * 180 / np.pi)
                 sample_collect(Rover, steer)
             else:
                 Rover.mode = 'turn_around'
-                turn_around(Rover)
         elif Rover.mode == 'stop':
             stop(Rover)
         elif Rover.mode == 'turn_around':
             turn_around(Rover)
-        elif Rover.mode == 'forward' and Rover.nav_angles is not None and np.max(Rover.nav_dists) > Rover.mim_wall_distance:
+        elif Rover.mode == 'forward' and Rover.can_go_forward:
             # Check the extent of navigable terrain
             # TODO Mapping algorithm
-            Rover.sample_detected = True
-            if Rover.vision_image[:, :, 1].any():
-                Rover.mode = 'sample'
-                Rover.sample_detected = True
+            if len(Rover.nav_angles) >= Rover.stop_forward:
+                steer = np.mean(Rover.nav_angles * 180 / np.pi)
+                forward(Rover, Rover.throttle_set, steer)
             else:
-                if len(Rover.nav_angles) >= Rover.stop_forward:
-                    steer = np.mean(Rover.nav_angles * 180 / np.pi)
-                    move_forward(Rover, steer)
-                else:
-                    Rover.mode = 'turn_around'
-                    turn_around(Rover)
+                Rover.mode = 'turn_around'
+                turn_around(Rover)
         else:
             Rover.mode = 'turn_around'
-            turn_around(Rover)"""
+            turn_around(Rover)
 
     """
     if Rover.nav_angles is not None:

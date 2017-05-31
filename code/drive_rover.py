@@ -53,8 +53,8 @@ class RoverState():
         self.nav_dists = None # Distances of navigable terrain pixels
         self.ground_truth = ground_truth_3d # Ground truth worldmap
         self.mode = 'forward' # Current mode (can be forward or stop)
-        self.throttle_set = 0.2 # Throttle setting when accelerating
-        self.brake_set = 10 # Brake setting when braking
+        self.throttle_set = 0.15 # Throttle setting when accelerating
+        self.brake_set = 0.5 # Brake setting when braking
         # The stop_forward and go_forward fields below represent total count
         # of navigable terrain pixels.  This is a very crude form of knowing
         # when you can keep going and when you should stop.  Feel free to
@@ -63,7 +63,7 @@ class RoverState():
         self.angle_forward = 20 # Threshold angle to go forward again
         self.can_go_forward = True
         self.mim_wall_distance = 40
-        self.pitch_cutoff = 1.5
+        self.pitch_cutoff = 2.5
         self.max_vel = 2 # Maximum velocity (meters/second)
         # Image output from perception step
         # Update this image to display your intermediate analysis steps
@@ -85,9 +85,9 @@ class RoverState():
         # path planning
         self.width = 320
         self.height = 160
-        self.dst_size = 8
+        self.dst_size = 10
         self.bottom_offset = 0
-        self.scale = 2 * self.dst_size
+        self.scale = 2 * self.dst_size + 2
         self.source = np.float32([[14, 140], [301 ,140],[200, 96], [118, 96]])
         self.destination = np.float32([[self.width/2 - self.dst_size, self.height - self.bottom_offset],
                           [self.width/2 + self.dst_size, self.height - self.bottom_offset],

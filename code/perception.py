@@ -82,17 +82,29 @@ def perspect_transform(img, src, dst):
 def process_img (image, src, dst):
 
     hsv_img = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-    path_threshed = color_thresh(hsv_img, rgb_thresh=(0, 0, 150))
-    obs_threshed = 1 - color_thresh(image, rgb_thresh=(90, 90, 90))
-    sample_threshed = color_thresh(hsv_img, rgb_thresh=(0, 120, 120))
+    path_threshed = color_thresh(hsv_img, rgb_thresh=(0, 0, 180))
+    #obs_threshed = 1 - color_thresh(image, rgb_thresh=(70, 70, 70))
+    sample_threshed = color_thresh(hsv_img, rgb_thresh=(0, 117, 117))
 
     path_warped = perspect_transform(path_threshed, src, dst)
-    obs_warped = perspect_transform(obs_threshed, src, dst)
+    #obs_warped = perspect_transform(obs_threshed, src, dst)
     sample_warped = perspect_transform(sample_threshed, src, dst)
 
     #drive_img = np.dstack((path_threshed, sample_threshed, np.zeros_like(path_warped))).astype(np.uint8)
 
-    return path_warped, obs_warped, sample_warped
+    return path_warped, sample_warped #, obs_warped
+
+def mean_angle(array):
+    if len(array) > 0:
+        return np.mean(array * 180 / np.pi)
+    else:
+        return 0
+
+def mean_dist(array):
+    if len(array) > 0:
+        return np.mean(array)
+    else:
+        return 0
 
 sample_lost = 0
 # Apply the above functions in succession and update the Rover state accordingly
@@ -100,7 +112,7 @@ def perception_step(Rover):
     # Perform perception steps to update Rover()
     # TODO: 
     # NOTE: camera image is coming to you in Rover.img
-    if Rover.picking_up == 0:
+    if Rover.picking_up == 0 and Rover.send_pickup is False:
         if Rover.pitch < Rover.pitch_cutoff or Rover.pitch > 360 - Rover.pitch_cutoff:
             img = Rover.img
             # 1) Define source and destination points for perspective transform
@@ -122,7 +134,7 @@ def perception_step(Rover):
             #path_threshed = perspect_transform(path_threshed, Rover.source, Rover.destination)
             # 3) Apply color threshold to identify navigable terrain/obstacles/rock samples
             #sample_threshed = perspect_transform(sample_threshed, Rover.source, Rover.destination)
-            path_warped, obs_warped, sample_warped = process_img(img, Rover.source, Rover.destination)
+            path_warped, sample_warped = process_img(img, Rover.source, Rover.destination)
 
             # 4) Update Rover.vision_image (this will be displayed on left side of screen)
             # mask the obstacles to remove camera blind spots
@@ -132,7 +144,7 @@ def perception_step(Rover):
             #cv2.fillPoly(obstacles, [pts_left], (0, 0, 0))
             #cv2.fillPoly(obstacles, [pts_right], (0, 0, 0))
 
-            Rover.vision_image[:,:,0] = obs_warped * 255
+            #Rover.vision_image[:,:,0] = obs_warped * 255
             Rover.vision_image[:,:,1] = sample_warped * 255
             Rover.vision_image[:,:,2] = path_warped * 255
 
@@ -141,12 +153,12 @@ def perception_step(Rover):
             # 5) Convert map image pixel values to rover-centric coords
             xpix_sample, ypix_sample = rover_coords(sample_warped)
             xpix_path, ypix_path = rover_coords(path_warped)
-            xpix_obs, ypix_obs = rover_coords(obs_warped)
+            #xpix_obs, ypix_obs = rover_coords(obs_warped)
 
             # 6) Convert rover-centric pixel values to world coordinates
-            x_world_obs, y_world_obs = pix_to_world(xpix_obs, ypix_obs, Rover.pos[0],
-                                                    Rover.pos[1], Rover.yaw,
-                                                    Rover.worldmap.shape[0], Rover.scale)
+            #x_world_obs, y_world_obs = pix_to_world(xpix_obs, ypix_obs, Rover.pos[0],
+            #                                        Rover.pos[1], Rover.yaw,
+            #                                        Rover.worldmap.shape[0], Rover.scale)
             x_world_rock, y_world_rock = pix_to_world(xpix_sample, ypix_sample, Rover.pos[0],
                                                       Rover.pos[1], Rover.yaw,
                                                       Rover.worldmap.shape[0], Rover.scale)
@@ -158,7 +170,7 @@ def perception_step(Rover):
                 # Example: Rover.worldmap[obstacle_y_world, obstacle_x_world, 0] += 1
                 #          Rover.worldmap[rock_y_world, rock_x_world, 1] += 1
                 #          Rover.worldmap[navigable_y_world, navigable_x_world, 2] += 1
-            Rover.worldmap[y_world_obs, x_world_obs, 0] += 1
+            #Rover.worldmap[y_world_obs, x_world_obs, 0] += 1
             Rover.worldmap[y_world_rock, x_world_rock, 1] += 1
             Rover.worldmap[y_world_path, x_world_path, 2] += 1
 
@@ -168,25 +180,15 @@ def perception_step(Rover):
                 # Rover.nav_angles = rover_centric_angles
             Rover.nav_dists, Rover.nav_angles = to_polar_coords(xpix_path, ypix_path)
 
-            try:
-                nav_mean_angle = np.mean(Rover.nav_angles * 180 / np.pi)
-                Rover.can_go_forward = nav_mean_angle > -1 * Rover.angle_forward and \
-                                       nav_mean_angle < Rover.angle_forward and \
-                                       np.mean(Rover.nav_dists) > Rover.mim_wall_distance
-            except:
-                Rover.can_go_forward = False
-
-            if Rover.can_go_forward == False:
-                Rover.mode = 'turn_around'
-            else:
-                Rover.mode = 'forward'
+            nav_mean_angle = mean_angle(Rover.nav_angles)
+            nav_mean_dist = mean_dist(Rover.nav_dists)
+            Rover.can_go_forward = nav_mean_angle > -1 * Rover.angle_forward and \
+                                   nav_mean_angle < Rover.angle_forward and \
+                                   nav_mean_dist > Rover.mim_wall_distance
 
             global sample_lost
             LOST_MAX = 10
             sample_size = 10
-
-
-            """Rover.sample_detected = False
 
             if sample_warped.any(): #len(np.nonzero(sample_threshed)[0])
                 # A rock has been detected so calculate direction to the rock
@@ -195,15 +197,13 @@ def perception_step(Rover):
                 sample_lost = 0
                 Rover.mode = 'sample'
             elif sample_lost >= LOST_MAX:
-                Rover.sample_dists = 0
-                Rover.sample_angles = 0
                 Rover.sample_detected = False
             elif Rover.sample_detected == True:
                 sample_lost += 1
             else:
                 Rover.sample_detected = False
-                Rover.mode = 'forward'"""
-        elif Rover.vel ==0 and Rover.pitch < 10 * Rover.pitch_cutoff or Rover.pitch > 360 - Rover.pitch_cutoff * 10:
+                Rover.mode = 'forward'
+        elif Rover.vel == 0 and Rover.pitch < 10 * Rover.pitch_cutoff or Rover.pitch > 360 - Rover.pitch_cutoff * 10:
             # has the rover driven up the wall
             Rover.mode = 'backward'
     return Rover
