@@ -56,23 +56,33 @@ def turn_around(Rover):
     Rover.throttle = 0
     Rover.brake = Rover.brake_set
 
-    print(Rover.can_go_forward, "  Rover.vel: ", Rover.vel)
-
     if Rover.can_go_forward:
         Rover.mode = 'forward'
+        Rover.turn_dir = 'none'
         Rover.brake = 0
     elif Rover.vel > 0.2:
         Rover.throttle = 0
         Rover.brake = Rover.brake_set
         Rover.steer = 0
     else:
-        if len(Rover.nav_angles) > 0:
-            if np.mean(Rover.nav_angles * 180 / np.pi) > 0:
-                Rover.steer = 15
+        if Rover.turn_dir == 'none':
+            if len(Rover.nav_angles) > 0:
+                if np.mean(Rover.nav_angles * 180 / np.pi) > 0:
+                    Rover.turn_dir = 'left'
+                    Rover.steer = -15
+                else:
+                    Rover.turn_dir = 'right'
+                    Rover.steer = 15
             else:
-                Rover.steer = -15
-        else:
+                Rover.turn_dir = 'right'
+        elif Rover.turn_dir == 'left':
             Rover.steer = -15
+        elif Rover.turn_dir == 'right':
+            Rover.steer = 15
+        else:
+            Rover.turn_dir = 'none'
+            Rover.steer = -15
+
         Rover.throttle = 0
         # Release the brake to allow turning
         Rover.brake = 0
@@ -84,7 +94,6 @@ def sample_collect(Rover, steer):
     else:
         distance = 0
     if Rover.near_sample > 0:
-        print("near sample")
         if Rover.vel > 0.2:
             brake(Rover, 1, steer)
         elif Rover.vel <= 0.1:
@@ -113,9 +122,7 @@ def decision_step(Rover):
     # improve on this decision tree to do a good job of navigating autonomously!
     if Rover.picking_up == 0 and Rover.send_pickup is False and Rover.skip_next:
         print(Rover.mode)
-        if Rover.mode == 'sample':
-            Rover.mode = 'forward'
-        if False: #Rover.mode == 'sample' or Rover.vision_image[:, :, 1].any():
+        if Rover.mode == 'sample' or Rover.vision_image[:, :, 1].any():
             Rover.mode = 'sample'
             if Rover.sample_detected:
                 steer = np.mean(Rover.sample_angles * 180 / np.pi)
