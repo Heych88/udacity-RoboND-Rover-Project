@@ -25,5 +25,4 @@ class PID:
         delta_error = self.old_error - measurement
         self.old_error = measurement
 
-        go = self.Kp * self.error + self.Ki * self.integral + self.Kp * delta_error
-        return go
+        return self.Kp * self.error + self.Ki * self.integral + self.Kp * delta_error
