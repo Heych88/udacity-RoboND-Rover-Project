@@ -63,6 +63,7 @@ class RoverState():
         self.angle_forward = 20 # Threshold angle to go forward again
         self.can_go_forward = True
         self.mim_wall_distance = 40
+        self.pitch_cutoff = 1.5
         self.max_vel = 2 # Maximum velocity (meters/second)
         # Image output from perception step
         # Update this image to display your intermediate analysis steps
