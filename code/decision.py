@@ -66,17 +66,23 @@ def turn_around(Rover):
         Rover.brake = Rover.brake_set
         Rover.steer = 0
     else:
-        if np.mean(Rover.nav_angles * 180 / np.pi) > 0:
-            Rover.steer = 15
+        if len(Rover.nav_angles) > 0:
+            if np.mean(Rover.nav_angles * 180 / np.pi) > 0:
+                Rover.steer = 15
+            else:
+                Rover.steer = -15
         else:
-            Rover.steer = -15  # Could be more clever here about which way to turn
+            Rover.steer = -15
         Rover.throttle = 0
         # Release the brake to allow turning
         Rover.brake = 0
         # Turn range is +/- 15 degrees, when stopped the next line will induce 4-wheel turning
 
 def sample_collect(Rover, steer):
-    distance = np.mean(Rover.sample_dists)
+    if len(Rover.sample_dists) > 0:
+        distance = np.mean(Rover.sample_dists)
+    else:
+        distance = 0
     if Rover.near_sample > 0:
         print("near sample")
         if Rover.vel > 0.2:
@@ -106,7 +112,7 @@ def decision_step(Rover):
     # Here you're all set up with some basic functionality but you'll need to
     # improve on this decision tree to do a good job of navigating autonomously!
     if Rover.picking_up == 0 and Rover.send_pickup is False and Rover.skip_next:
-        #print(Rover.mode)
+        print(Rover.mode)
         if Rover.mode == 'sample':
             Rover.mode = 'forward'
         if False: #Rover.mode == 'sample' or Rover.vision_image[:, :, 1].any():
@@ -124,7 +130,10 @@ def decision_step(Rover):
             # Check the extent of navigable terrain
             # TODO Mapping algorithm
             if len(Rover.nav_angles) >= Rover.stop_forward:
-                steer = np.mean(Rover.nav_angles * 180 / np.pi)
+                if len(Rover.nav_angles) > 0:
+                    steer = np.mean(Rover.nav_angles * 180 / np.pi)
+                else:
+                    steer = 0
                 Rover.PID.set_desired(Rover.throttle_set)
                 forward(Rover, Rover.vel, steer)
             else:

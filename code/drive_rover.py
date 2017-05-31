@@ -21,7 +21,7 @@ import time
 from perception import perception_step
 from decision import decision_step
 from supporting_functions import update_rover, create_output_images
-import contoller as controller
+import controller
 # Initialize socketio server and Flask application 
 # (learn more at: https://python-socketio.readthedocs.io/en/latest/)
 sio = socketio.Server()
@@ -50,8 +50,8 @@ class RoverState():
         self.steer = 0 # Current steering angle
         self.throttle = 0 # Current throttle value
         self.brake = 0 # Current brake value
-        self.nav_angles = None # Angles of navigable terrain pixels
-        self.nav_dists = None # Distances of navigable terrain pixels
+        self.nav_angles = [] # Angles of navigable terrain pixels
+        self.nav_dists = [] # Distances of navigable terrain pixels
         self.ground_truth = ground_truth_3d # Ground truth worldmap
         self.mode = 'forward' # Current mode (can be forward or stop)
         self.throttle_set = 1.25 # Throttle setting when accelerating
