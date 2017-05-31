@@ -82,8 +82,8 @@ def perspect_transform(img, src, dst):
 def process_img (image, src, dst):
 
     hsv_img = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-    path_threshed = color_thresh(hsv_img, rgb_thresh=(0, 0, 140))
-    obs_threshed = 1 - color_thresh(image, rgb_thresh=(160, 160, 160))
+    path_threshed = color_thresh(hsv_img, rgb_thresh=(0, 0, 150))
+    obs_threshed = 1 - color_thresh(image, rgb_thresh=(90, 90, 90))
     sample_threshed = color_thresh(hsv_img, rgb_thresh=(0, 120, 120))
 
     path_warped = perspect_transform(path_threshed, src, dst)
