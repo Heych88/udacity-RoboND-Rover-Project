@@ -165,15 +165,24 @@ def perception_step(Rover):
         # Update Rover pixel distances and angles
             # Rover.nav_dists = rover_centric_pixel_distances
             # Rover.nav_angles = rover_centric_angles
-        #Rover.nav_dists, Rover.nav_angles = to_polar_coords(xpix_path, ypix_path)
+        Rover.nav_dists, Rover.nav_angles = to_polar_coords(xpix_path, ypix_path)
+
+        nav_mean_angle = np.mean(Rover.nav_angles * 180 / np.pi)
+        Rover.can_go_forward = nav_mean_angle > -1 * Rover.angle_forward and \
+                               nav_mean_angle < Rover.angle_forward and \
+                               np.mean(Rover.nav_dists) > Rover.mim_wall_distance
+
+        if Rover.can_go_forward == False:
+            Rover.mode = 'turn_around'
+        else:
+            Rover.mode = 'forward'
 
         global sample_lost
         LOST_MAX = 10
         sample_size = 10
 
 
-        Rover.sample_detected = False
-        Rover.mode = 'forward'
+        """Rover.sample_detected = False
 
         if sample_warped.any(): #len(np.nonzero(sample_threshed)[0])
             # A rock has been detected so calculate direction to the rock
@@ -189,5 +198,5 @@ def perception_step(Rover):
             sample_lost += 1
         else:
             Rover.sample_detected = False
-            Rover.mode = 'forward'
+            Rover.mode = 'forward'"""
     return Rover

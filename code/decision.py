@@ -1,40 +1,17 @@
 import numpy as np
-from collections import deque
-import time
-
-class average():
-    def __init__(self, max_size=10):
-        self.queue_size = int(max_size)
-        self.queue = deque(maxlen=self.queue_size)
-
-    def std_ma(self, data):
-        # calculates the moving average of the filter as well as keeps track
-        # of the time series  data
-        # data : new data to be added to the queue to be filtered
-        # return : the filtered average for the filter, -1 if error
-        self.queue.appendleft(data)
-        queue_length = len(self.queue)
-        try:
-            # find the moving average
-            average = sum(self.queue) / queue_length
-        except:
-            average = 0
-
-        if queue_length >= self.queue_size:
-            self.queue.pop()
-        return average
-
-steer_filter = average(max_size=4)
 
 def forward(Rover, speed, steer):
-    if Rover.vel < Rover.max_vel:
-        # Set throttle value to throttle setting
-        Rover.throttle = speed
-    else:  # Else coast
-        Rover.throttle = 0
-    Rover.brake = 0
-    # Set steering to average angle clipped to the range +/- 15
-    Rover.steer = np.clip(steer, -15, 15)
+    if Rover.can_go_forward:
+        if Rover.vel < Rover.max_vel:
+            # Set throttle value to throttle setting
+            Rover.throttle = speed
+        else:  # Else coast
+            Rover.throttle = 0
+        Rover.brake = 0
+        # Set steering to average angle clipped to the range +/- 15
+        Rover.steer = np.clip(steer, -15, 15)
+    else:
+        Rover.mode ='turn_around'
 
 def stop(Rover):
     # If we're in stop mode but still moving keep braking
@@ -67,18 +44,24 @@ def turn_around(Rover):
     Rover.throttle = 0
     Rover.brake = Rover.brake_set
 
-    if len(Rover.nav_angles) < Rover.go_forward:
+    print(Rover.can_go_forward, "  Rover.vel: ", Rover.vel)
 
-        if np.mean(Rover.sample_angles * 180 / np.pi) > 0:
-            Rover.steer = 30
+    if Rover.can_go_forward:
+        Rover.mode = 'forward'
+        Rover.brake = 0
+    elif Rover.vel > 0.2:
+        Rover.throttle = 0
+        Rover.brake = Rover.brake_set
+        Rover.steer = 0
+    else:
+        if np.mean(Rover.nav_angles * 180 / np.pi) > 0:
+            Rover.steer = 15
         else:
-            Rover.steer = -30  # Could be more clever here about which way to turn
+            Rover.steer = -15  # Could be more clever here about which way to turn
         Rover.throttle = 0
         # Release the brake to allow turning
         Rover.brake = 0
         # Turn range is +/- 15 degrees, when stopped the next line will induce 4-wheel turning
-    elif len(Rover.nav_angles) > Rover.go_forward and np.max(Rover.nav_dists) > 10 + Rover.mim_wall_distance:
-        Rover.mode = 'forward'
 
 def sample_collect(Rover, steer):
     distance = np.mean(Rover.sample_dists)
@@ -98,9 +81,9 @@ def sample_collect(Rover, steer):
             Rover.throttle = Rover.throttle_set
             forward(Rover, Rover.throttle, steer)
         else:
-            turn_around(Rover)
+            Rover.mode = 'turn_around'
     else:
-        turn_around(Rover)
+        Rover.mode = 'turn_around'
 
 def move_forward(Rover, steer):
     # If mode is forward, navigable terrain looks good
@@ -123,6 +106,11 @@ def decision_step(Rover):
     # improve on this decision tree to do a good job of navigating autonomously!
     if Rover.picking_up == 0 and Rover.send_pickup is False:
         print(Rover.mode)
+        if Rover.mode == 'turn_around':
+            turn_around(Rover)
+        elif Rover.mode == 'forward':
+            forward(Rover, 0.2, 0)
+
         """if Rover.mode == 'sample':
             if Rover.sample_detected == True:
                 steer = np.mean(Rover.sample_angles * 180 / np.pi)
