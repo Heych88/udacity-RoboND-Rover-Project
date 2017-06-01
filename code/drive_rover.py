@@ -16,6 +16,7 @@ import json
 import pickle
 import matplotlib.image as mpimg
 import time
+import cv2
 
 # Import functions for perception and decision making
 from perception import perception_step
@@ -31,6 +32,10 @@ app = Flask(__name__)
 # NOTE: images are read in by default with the origin (0, 0) in the upper left
 # and y-axis increasing downward.
 ground_truth = mpimg.imread('../calibration_images/map_bw.png')
+grid = cv2.imread('../calibration_images/map_bw.png', 0)
+#cv2.imshow("grid", grid)
+#cv2.waitKey(0)
+
 # This next line creates arrays of zeros in the red and blue channels
 # and puts the map into the green channel.  This is why the underlying 
 # map output looks green in the display image
@@ -63,7 +68,7 @@ class RoverState():
         self.stop_forward = 20 # Threshold to initiate stopping
         self.angle_forward = 20 # Threshold angle to go forward again
         self.can_go_forward = True
-        self.mim_wall_distance = 40
+        self.mim_wall_distance = 30
         self.pitch_cutoff = 2.5
         self.max_vel = 5 # Maximum velocity (meters/second)
         # Image output from perception step
@@ -86,7 +91,11 @@ class RoverState():
         # path planning
         self.width = 320
         self.height = 160
-        self.dst_size = 12
+        self.grid = np.invert(grid)
+        self.goal = [[78,75],[60,101],[16,98],[114,11],[118,50],[145,95],[145,95],[145,40],[103,189]]
+        self.policy = [[-1 for col in range(len(grid[0]))] for row in range(len(grid))]
+        self.grid_set = False
+        self.dst_size = 10
         self.bottom_offset = 0
         self.scale = 2 * self.dst_size
         self.source = np.float32([[14, 140], [301 ,140],[200, 96], [118, 96]])

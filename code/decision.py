@@ -1,16 +1,24 @@
 import numpy as np
+from search import optimum_policy
 
-def forward(Rover, speed, steer):
-    if Rover.can_go_forward:
+def forward(Rover, speed, steer, can_move):
+    if can_move:
+        print("can move")
         if Rover.vel < Rover.max_vel:
+            print("PID vel")
             # Set throttle value to throttle setting
-            Rover.throttle = Rover.PID.update(speed)
+            throttle = Rover.PID.update(speed)
+            if throttle > 10:
+                throttle = 10
+            print("after PID ", throttle)
+            Rover.throttle = throttle
         else:  # Else coast
             Rover.throttle = 0
         Rover.brake = 0
         # Set steering to average angle clipped to the range +/- 15
         Rover.steer = np.clip(steer, -15, 15)
     else:
+        print("move to turn around")
         Rover.mode ='turn_around'
         Rover.PID.clear_PID()
 
@@ -21,7 +29,6 @@ def backward(Rover):
         Rover.brake = 0
         # Set steering to average angle clipped to the range +/- 15
         Rover.steer = 0
-        Rover.PID.clear_PID()
     else:
         Rover.mode ='turn_around'
         Rover.PID.clear_PID()
@@ -51,7 +58,6 @@ def brake(Rover, brake_force, steer):
         brake_force = Rover.brake_set
     else:
         brake_force = brake_force * Rover.brake_set
-
     Rover.throttle = 0
     Rover.brake = brake_force
     Rover.steer = np.clip(steer, -15, 15)
@@ -65,6 +71,7 @@ def turn_around(Rover):
         Rover.mode = 'forward'
         Rover.turn_dir = 'none'
         Rover.brake = 0
+        Rover.PID.clear_PID()
     elif Rover.vel > 0.2:
         Rover.throttle = 0
         Rover.brake = Rover.brake_set
@@ -74,16 +81,16 @@ def turn_around(Rover):
             if len(Rover.nav_angles) > 0:
                 if np.mean(Rover.nav_angles * 180 / np.pi) > 0:
                     Rover.turn_dir = 'left'
-                    Rover.steer = -15
+                    Rover.steer = 15
                 else:
                     Rover.turn_dir = 'right'
-                    Rover.steer = 15
+                    Rover.steer = -15
             else:
                 Rover.turn_dir = 'right'
         elif Rover.turn_dir == 'left':
-            Rover.steer = -15
-        elif Rover.turn_dir == 'right':
             Rover.steer = 15
+        elif Rover.turn_dir == 'right':
+            Rover.steer = -15
         else:
             Rover.turn_dir = 'none'
             Rover.steer = -15
@@ -93,31 +100,40 @@ def turn_around(Rover):
         Rover.brake = 0
         # Turn range is +/- 15 degrees, when stopped the next line will induce 4-wheel turning
 
-def sample_collect(Rover, steer):
+def sample_collect(Rover):
+    Rover.mode = 'sample'
     if len(Rover.sample_dists) > 0:
         distance = np.mean(Rover.sample_dists)
     else:
-        distance = 0
+        distance = 30
+    if len(Rover.sample_angles) > 0:
+        steer = np.mean(Rover.sample_angles * 180 / np.pi)
+    else:
+        steer = 0
+
     if Rover.near_sample > 0:
         if Rover.vel > 0.2:
-            brake(Rover, 1, steer)
+            brake(Rover, 1, steer*0.8)
         elif Rover.vel <= 0.1:
             stop(Rover)
             Rover.send_pickup = True
             Rover.mode = 'turn_around'
     elif distance < 40:
         if Rover.vel > 0.2:
-            brake(Rover, 0.1, steer)
+            Rover.PID.clear_PID()
+            brake(Rover, 0.1, steer*0.8)
         else:
             Rover.PID.set_desired(0.2)
-            forward(Rover, Rover.vel, steer)
+            forward(Rover, Rover.vel, 0.8*steer, True)
     elif Rover.sample_angles is not None:
         print("got sample data")
         """if len(Rover.sample_angles) >= Rover.sample_stop_forward:
             # If mode is forward, navigable terrain looks good
             # and velocity is below max, then throttle"""
         Rover.PID.set_desired(Rover.throttle_set)
-        forward(Rover, Rover.vel, steer)
+        print("PID enter")
+        forward(Rover, Rover.vel, steer*0.8, True)
+        print("after forward")
         #else:
         #    Rover.mode = 'turn_around'
     else:
@@ -129,18 +145,13 @@ def decision_step(Rover):
     # Implement conditionals to decide what to do given perception data
     # Here you're all set up with some basic functionality but you'll need to
     # improve on this decision tree to do a good job of navigating autonomously!
-    if Rover.picking_up == 0 and Rover.send_pickup is False and Rover.skip_next:
-        #print(Rover.mode)
-        if Rover.mode == 'sample' or Rover.vision_image[:, :, 1].any():
-            Rover.mode = 'sample'
+    if Rover.picking_up == 0 and Rover.send_pickup is False:
+        print(Rover.mode)
+
+        if Rover.sample_angles.any(): #Rover.mode == 'sample':
             Rover.skip_next = True
-            if Rover.sample_detected:
-                if len(Rover.sample_angles) > 0:
-                    steer = np.mean(Rover.sample_angles * 180 / np.pi)
-                else:
-                    steer = 0
-                print("steer : ", steer)
-                sample_collect(Rover, steer * 0.8)
+            if Rover.sample_angles.any():
+                sample_collect(Rover)
             else:
                 Rover.mode = 'turn_around'
         #elif Rover.mode == 'stop':
@@ -156,7 +167,7 @@ def decision_step(Rover):
                 else:
                     steer = 0
                 Rover.PID.set_desired(Rover.throttle_set)
-                forward(Rover, Rover.vel, steer)
+                forward(Rover, Rover.vel, steer*0.9, Rover.can_go_forward)
             else:
                 Rover.mode = 'turn_around'
                 turn_around(Rover)
