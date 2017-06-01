@@ -33,8 +33,6 @@ app = Flask(__name__)
 # and y-axis increasing downward.
 ground_truth = mpimg.imread('../calibration_images/map_bw.png')
 grid = cv2.imread('../calibration_images/map_bw.png', 0)
-#cv2.imshow("grid", grid)
-#cv2.waitKey(0)
 
 # This next line creates arrays of zeros in the red and blue channels
 # and puts the map into the green channel.  This is why the underlying 
@@ -67,8 +65,10 @@ class RoverState():
         # get creative in adding new fields or modifying these!
         self.stop_forward = 20 # Threshold to initiate stopping
         self.angle_forward = 20 # Threshold angle to go forward again
-        self.can_go_forward = True
-        self.mim_wall_distance = 30
+        self.can_go_forward = True # tracks clearance ahead for moving forward
+        # pixel distance threshold for how close to a wall before turning around
+        self.mim_wall_distance = 25
+        # pitch angle for when the rover is considered to have climbed a wall
         self.pitch_cutoff = 2.5
         self.max_vel = 5 # Maximum velocity (meters/second)
         # Image output from perception step
@@ -89,23 +89,31 @@ class RoverState():
         self.picking_up = 0 # Will be set to telemetry value data["picking_up"]
         self.send_pickup = False # Set to True to trigger rock pickup
         # path planning
-        self.width = 320
-        self.height = 160
-        self.grid = np.invert(grid)
-        self.goal = [[78,75],[60,101],[16,98],[114,11],[118,50],[145,95],[145,95],[145,40],[103,189]]
+        self.width = 320 # width of camera images
+        self.height = 160 # height of camera images
+        self.grid = np.invert(grid) # world map for grid and local search
+        # positions of unknown map areas to discover
+        self.goal = [[78,75],[60,101],[16,98],[114,11],[118,50],[145,95],
+                     [145,95],[145,40],[103,189]]
+        # setup the policy grid for grid search
         self.policy = [[-1 for col in range(len(grid[0]))] for row in range(len(grid))]
-        self.grid_set = False
-        self.dst_size = 10
-        self.bottom_offset = 0
+        self.grid_set = False # tracks if a grid policy is in place or not
+        self.dst_size = 10 # pixel count for warped image destination size
+        self.bottom_offset = 0 # pixel offset from the bottom of the screen
+        # amount of pixels per meter on the map seen through the camera
         self.scale = 2 * self.dst_size
+        # source points for image warping
         self.source = np.float32([[14, 140], [301 ,140],[200, 96], [118, 96]])
-        self.destination = np.float32([[self.width/2 - self.dst_size, self.height - self.bottom_offset],
-                          [self.width/2 + self.dst_size, self.height - self.bottom_offset],
-                          [self.width/2 + self.dst_size, self.height - 2*self.dst_size - self.bottom_offset],
-                          [self.width/2 - self.dst_size, self.height - 2*self.dst_size - self.bottom_offset],
-                          ])
-        self.skip_next = False
-        self.PID = controller.PID(2, 0.005, 0.5)
+        # destination points for the image warping
+        self.destination = np.float32(
+            [[self.width/2 - self.dst_size, self.height - self.bottom_offset],
+            [self.width/2 + self.dst_size, self.height - self.bottom_offset],
+            [self.width/2 + self.dst_size, self.height - 2*self.dst_size - self.bottom_offset],
+            [self.width/2 - self.dst_size, self.height - 2*self.dst_size - self.bottom_offset],
+            ])
+        self.skip_next = False # tracks image processing and skips every second one
+        self.PID = controller.PID(2, 0.005, 0.5) # PID controller for speed
+        # keeps track of the turn direction for on the spot rotations
         self.turn_dir = 'none'
 # Initialize our rover 
 Rover = RoverState()
@@ -116,7 +124,6 @@ frame_counter = 0
 # Initalize second counter
 second_counter = time.time()
 fps = None
-
 
 # Define telemetry function for what to do with incoming data
 @sio.on('telemetry')

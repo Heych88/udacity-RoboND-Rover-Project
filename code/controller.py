@@ -5,7 +5,7 @@ class PID:
     def __init__(self, Kp, Ki, Kd):
         self.Kp = Kp # proportion gain
         self.Ki = Ki # integral gain
-        self.Kd = Kd # derivitive gain
+        self.Kd = Kd # derivative gain
         self.set_point = 0. # desired value for the output
         self.integral = 0. # accumulated integral of the error
         self.old_measurement = 0. # holds the last measured error
