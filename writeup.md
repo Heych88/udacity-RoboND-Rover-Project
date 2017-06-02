@@ -99,6 +99,10 @@ An example video `test_mapping.mp4` is supplied the folder `output` and below.
 
 The code outlined above was placed into the file `perception.py` in the folder code. The rover controller and states update code in located in the file `decision.py`.
 
+The following results have been obtained with the following simulator settings:
+- Screen resolution - 1152 x 864
+- Graphics Quality - Good
+
 The code states are set out in a decision tree in the process order. See the code  function `decision_step()`, lines 148 to 180 in the file `decision.py` for more details.
 1. Samples rocks found
   - navigate towards the sample and pick up if close.
