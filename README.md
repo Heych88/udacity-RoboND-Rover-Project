@@ -2,6 +2,17 @@
 
 This is the project implementation of the [Udacity RoboND-Rover-Project](https://github.com/udacity/RoboND-Rover-Project) which uses a simulator to autonomously navigate an enviroment modeled after the [NASA sample return challenge](https://www.nasa.gov/directorates/spacetech/centennial_challenges/sample_return_robot/index.html)
 
+A video of the rover in action can be seen below.
+
+ [![Rover in action](output/rover-video.png)](https://youtu.be/RxEsXVy2FaQ)
+
+## Writeup
+
+For a detailed description and walk through of the key areas of the code, visit the project website [here](https://www.haidynmcleod.com/search-and-collect-rover/Rover).
+The [writeup.md](writeup.md) also contains details of the code and mathematical derivations used in this project.
+
+---
+
 ## The Simulator
 The simulator environment can be downloaded for the appropriate operating system.  Here are the links for [Linux](https://s3-us-west-1.amazonaws.com/udacity-robotics/Rover+Unity+Sims/Linux_Roversim.zip), [Mac](	https://s3-us-west-1.amazonaws.com/udacity-robotics/Rover+Unity+Sims/Mac_Roversim.zip), or [Windows](https://s3-us-west-1.amazonaws.com/udacity-robotics/Rover+Unity+Sims/Windows_Roversim.zip).  
 
