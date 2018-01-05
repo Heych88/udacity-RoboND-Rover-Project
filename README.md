@@ -6,10 +6,10 @@ A video of the rover in action can be seen below.
 
  [![Rover in action](output/rover-video.png)](https://youtu.be/RxEsXVy2FaQ)
 
-## Writeup
 
-For a detailed description and walk through of the key areas of the code, visit the project website [here](https://www.haidynmcleod.com/search-and-collect-rover/Rover).
-The [writeup.md](writeup.md) also contains details of the code and mathematical derivations used in this project.
+## Project website
+
+This repository has an accompanying project page, contains the theory and details behind the code. It can be found [here](https://www.haidynmcleod.com/search-and-collect-rover/Rover).
 
 ---
 
